@@ -1,56 +1,56 @@
-# Previsão de preços do Airbnb em Hong Kong
+# Airbnb price prediction in Hong Kong
 
-**Regressão linear e logística implementadas de raiz, com gradient descent e sem bibliotecas de machine learning.**
+**Linear and logistic regression implemented from scratch, with gradient descent and no machine learning libraries.**
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
 ![NumPy](https://img.shields.io/badge/NumPy-only-013243)
-![Sem libs de ML](https://img.shields.io/badge/scikit--learn-n%C3%A3o%20usado-critical)
+![No ML libraries](https://img.shields.io/badge/scikit--learn-not%20used-critical)
 
-Dois modelos sobre 6 046 anúncios do Airbnb: um prevê o preço por noite, outro
-assinala os alojamentos no top 20% de preço dentro de grupos comparáveis. Toda a
-matemática — gradient descent, regularização L2, sigmoide, k-fold — está escrita
-à mão em `linear_regression.py` e `logistic_regression.py`.
+Two models over 6,046 Airbnb listings: one predicts the nightly price, the other
+flags the listings in the top 20% of price within comparable groups. All of the
+maths — gradient descent, L2 regularisation, sigmoid, k-fold — is written by hand
+in `linear_regression.py` and `logistic_regression.py`.
 
-| | Métrica | Teste |
+| | Metric | Test |
 |---|---|---|
-| **Regressão** (log-preço) | R² | **0.6746** |
+| **Regression** (log-price) | R² | **0.6746** |
 | | RMSE | 0.4989 |
-| **Classificação** (top 20%) | ROC-AUC | **0.8043** |
+| **Classification** (top 20%) | ROC-AUC | **0.8043** |
 | | F1 (threshold 0.273) | 0.4891 |
 
 <p align="center">
-  <img src="figures/preco_vs_log_preco.png" width="48%" alt="Distribuição do preço e do log-preço">
-  <img src="figures/curva_roc.png" width="48%" alt="Curva ROC do classificador">
+  <img src="figures/preco_vs_log_preco.png" width="48%" alt="Price and log-price distributions">
+  <img src="figures/curva_roc.png" width="48%" alt="ROC curve of the classifier">
 </p>
 
-### O que vale a pena ver aqui
+### What is worth looking at here
 
-- **Nada é caixa preta.** As duas regressões são código próprio: inicialização,
-  gradiente, atualização de pesos, critério de paragem.
-- **Cada decisão de pré-processamento é testada, não assumida.** A tabela de
-  ablações em `report/ablacoes.csv` compara estratégias de imputação e de
-  outliers lado a lado — e mostra que duas delas não fizeram diferença nenhuma.
-- **O log-preço é a decisão que carrega o projeto:** o R² sobe de 0.188 para
-  0.660 só por mudar o alvo.
-- **O threshold foi afinado, não deixado em 0.5:** o recall passa de 0.165 para
-  0.574.
+- **Nothing is a black box.** Both regressions are my own code: initialisation,
+  gradient, weight updates, stopping criterion.
+- **Every preprocessing decision is tested, not assumed.** The ablation table in
+  `report/ablacoes.csv` compares imputation and outlier strategies side by side —
+  and shows that two of them made no difference at all.
+- **Taking the log of the price is the decision that carries the project:** R²
+  goes from 0.188 to 0.660 just by changing the target.
+- **The threshold was tuned, not left at 0.5:** recall goes from 0.165 to 0.574.
 
-**Autor:** Bernardo Nabais · **Cadeira:** Machine Learning · **Curso:**
-Inteligência Artificial e Ciência de Dados, UBI · **Ano letivo:** 2026/2027
+**Author:** Bernardo Nabais · **Course unit:** Machine Learning · **Degree:**
+Artificial Intelligence and Data Science, University of Beira Interior ·
+**Academic year:** 2026/2027
 
 ---
 
-## 1. Objetivo
+## 1. Goal
 
-Pipeline completo de aprendizagem supervisionada sobre listings do Airbnb, com
-dois objetivos:
+A complete supervised learning pipeline over Airbnb listings, with two
+objectives:
 
-- **Regressão:** prever o preço por noite a partir das características do alojamento.
-- **Classificação:** identificar alojamentos no top 20% de preço dentro de grupos comparáveis.
+- **Regression:** predict the nightly price from the listing's characteristics.
+- **Classification:** identify listings in the top 20% of price within comparable groups.
 
-Todos os modelos são implementados de raiz com gradient descent, sem bibliotecas
-de machine learning. O foco está na justificação das decisões de pré-processamento
-e na interpretação dos modelos.
+Every model is implemented from scratch with gradient descent, without machine
+learning libraries. The focus is on justifying the preprocessing decisions and on
+interpreting the models.
 
 ---
 
@@ -58,70 +58,70 @@ e na interpretação dos modelos.
 
 | | |
 |---|---|
-| **Cidade** | Hong Kong |
-| **Fonte** | [Inside Airbnb - Get the Data](https://insideairbnb.com/get-the-data/) |
-| **Datas de scraping** | 2026-06-28, 2026-06-29, 2026-07-03 |
-| **Moeda** | HKD (dólares de Hong Kong) |
-| **Dimensões originais** | 6 734 linhas × 90 colunas |
-| **Após limpeza** | 6 046 linhas × 51 features |
+| **City** | Hong Kong |
+| **Source** | [Inside Airbnb - Get the Data](https://insideairbnb.com/get-the-data/) |
+| **Scraping dates** | 2026-06-28, 2026-06-29, 2026-07-03 |
+| **Currency** | HKD (Hong Kong dollars) |
+| **Original size** | 6,734 rows × 90 columns |
+| **After cleaning** | 6,046 rows × 51 features |
 
-O ficheiro descarregado (`listings.csv.gz`) foi descomprimido e colocado em
-`data/listings.csv`. O código lê diretamente esse caminho; `pd.read_csv` aceita
-qualquer das duas formas, bastando ajustar o nome.
+The downloaded file (`listings.csv.gz`) was decompressed and placed in
+`data/listings.csv`. The code reads that path directly; `pd.read_csv` accepts
+either form, you only need to adjust the name.
 
 ---
 
-## 3. Estrutura do projeto
+## 3. Project layout
 
 ```text
 projeto1_ml_a55903/
 ├── data/
-│   ├── listings.csv                # Dataset original (descomprimido)
-│   └── processado/                 # Matrizes finais geradas pelo pipeline
-├── figures/                       # Figuras geradas pelo notebook
+│   ├── listings.csv                # Original dataset (decompressed)
+│   └── processado/                 # Final matrices produced by the pipeline
+├── figures/                       # Figures produced by the notebook
 ├── report/
-│   ├── ablacoes.csv               # Tabela comparativa das estratégias
+│   ├── ablacoes.csv               # Comparison table of the strategies
 │   ├── coeficientes_linear.csv
 │   └── coeficientes_logistica.csv
-├── exploracao.ipynb                # Análise exploratória e experiências
-├── data_preparation.py             # Pipeline de pré-processamento
-├── linear_regression.py            # Regressão linear (gradient descent + L2)
-├── logistic_regression.py          # Regressão logística (gradient descent)
+├── exploracao.ipynb                # Exploratory analysis and experiments
+├── data_preparation.py             # Preprocessing pipeline
+├── linear_regression.py            # Linear regression (gradient descent + L2)
+├── logistic_regression.py          # Logistic regression (gradient descent)
 └── README.md
 ```
 
 ---
 
-## 4. Como reproduzir
+## 4. How to reproduce
 
-**Requisitos:** Python 3.11+, com `pandas`, `numpy` e `matplotlib`.
-Nenhuma biblioteca de machine learning é usada.
+**Requirements:** Python 3.11+, with `pandas`, `numpy` and `matplotlib`.
+No machine learning library is used.
 
 ```bash
 pip install pandas numpy matplotlib jupyter
 ```
 
-**Passos:**
+**Steps:**
 
-1. Descarregar `listings.csv.gz` de Hong Kong em
+1. Download the Hong Kong `listings.csv.gz` from
    [insideairbnb.com/get-the-data](https://insideairbnb.com/get-the-data/),
-   descomprimir e colocar em `data/listings.csv`.
-2. Abrir `exploracao.ipynb` e executar todas as células por ordem
+   decompress it and place it in `data/listings.csv`.
+2. Open `exploracao.ipynb` and run all the cells in order
    (*Restart & Run All*).
-3. As figuras são escritas em `figures/`, as tabelas em `report/` e as matrizes
-   finais em `data/processado/`.
+3. Figures are written to `figures/`, tables to `report/`, and the final
+   matrices to `data/processado/`.
 
-**Reprodutibilidade:** todas as divisões aleatórias usam `seed=42`
-(split treino/validação/teste e k-fold). Os resultados são determinísticos.
+**Reproducibility:** every random split uses `seed=42`
+(train/validation/test split and k-fold). The results are deterministic.
 
-**Usar o pipeline diretamente:**
+**Using the pipeline directly:**
 
 ```python
 from data_preparation import pipeline_completo
 
 X_treino, (X_val, X_teste), y_treino, (y_val, y_teste) = pipeline_completo(
-    estrategia_missing="simples",      # ou "agrupada"
-    estrategia_outliers="nenhuma",     # ou "capping" / "filtragem"
+    estrategia_missing="simples",      # or "agrupada"
+    estrategia_outliers="nenhuma",     # or "capping" / "filtragem"
     polinomiais=True,
     interacoes=True,
     guardar=True,
@@ -130,148 +130,145 @@ X_treino, (X_val, X_teste), y_treino, (y_val, y_teste) = pipeline_completo(
 
 ---
 
-## 5. Decisões de pré-processamento
+## 5. Preprocessing decisions
 
-### 5.1 Alvo
+### 5.1 Target
 
-- Coluna `price`, convertida de texto (`"$1,181.02"`) para número.
-- Confirmado como preço por noite (igual a `price_quote_price_per_night`).
-- **688 linhas sem preço removidas** (10,2%) — o alvo nunca é imputado.
-- Alvo dos modelos: **log(price)**, por a distribuição ser fortemente
-  assimétrica (mediana 424 HKD, máximo 171 234 HKD).
+- The `price` column, converted from text (`"$1,181.02"`) to a number.
+- Confirmed to be the nightly price (equal to `price_quote_price_per_night`).
+- **688 rows with no price removed** (10.2%) — the target is never imputed.
+- Model target: **log(price)**, because the distribution is heavily skewed
+  (median 424 HKD, maximum 171,234 HKD).
 
-### 5.2 Fugas de informação
+### 5.2 Data leakage
 
-Excluídas das features por serem derivadas do alvo:
+Excluded from the features because they are derived from the target:
 `price_quote_total_price`, `price_quote_price_per_night`,
 `estimated_revenue_l365d`, `price_quote_raw`.
 
-### 5.3 Duração da estadia simulada
+### 5.3 Simulated length of stay
 
-- **Decisão:** manter todas as durações e usar a duração como feature.
-- **Justificação:** a mediana cai de 545 HKD (1 noite) para 221 HKD (28-31
-  noites). Em Hong Kong, estadias com menos de 28 noites exigem licença, o que
-  explica a concentração de anúncios no grupo 28-31 (2 535 alojamentos).
-- **Features criadas:** `noites` (numérica) e `long_stay` (binária, ≥ 28).
-- **Validação da decisão:** o viés dos resíduos é praticamente nulo em todos os
-  grupos de duração (entre −0.004 e +0.059 para 1 a 31 noites).
+- **Decision:** keep every length of stay and use the length as a feature.
+- **Justification:** the median drops from 545 HKD (1 night) to 221 HKD (28-31
+  nights). In Hong Kong, stays shorter than 28 nights require a licence, which
+  explains why listings cluster in the 28-31 group (2,535 listings).
+- **Features created:** `noites` (numeric) and `long_stay` (binary, ≥ 28).
+- **Validating the decision:** residual bias is close to zero across every
+  length-of-stay group (between −0.004 and +0.059 for 1 to 31 nights).
 
 ### 5.4 Missing values
 
-**Ausência com significado:**
-- Colunas de reviews (~45%, correlação 1.00 entre si — falham nas mesmas
-  linhas): criada feature `tem_reviews`; `review_scores_rating` imputado com a
-  mediana dos alojamentos que têm reviews.
+**Missing with a meaning:**
+- Review columns (~45%, correlation 1.00 with each other — they are missing on
+  the same rows): created a `tem_reviews` feature; `review_scores_rating` imputed
+  with the median of the listings that do have reviews.
 
-**Valor desconhecido — duas políticas comparadas:**
-- `bedrooms` (44,8%), `bathrooms` (11%), `beds` (4,9%).
-- Política **simples:** mediana global do treino.
-- Política **agrupada:** mediana por grupo `room_type × accommodates`.
-- `bathrooms_text` (0,3% missing) usada para recuperar valores de `bathrooms`
-  antes de qualquer imputação.
+**Unknown value — two policies compared:**
+- `bedrooms` (44.8%), `bathrooms` (11%), `beds` (4.9%).
+- **Simple** policy: global median of the training set.
+- **Grouped** policy: median per `room_type × accommodates` group.
+- `bathrooms_text` (0.3% missing) used to recover `bathrooms` values before any
+  imputation.
 
-**Removidas:**
-- 14 colunas 100% vazias, incluindo `host_response_rate`, `host_response_time`,
-  `host_acceptance_rate`, `neighbourhood`, `license` e `instant_bookable`.
-  Limitação do ficheiro desta versão.
-- `property_type` (55 categorias), removida por multicolinearidade total com
-  `room_type` — ver secção 5.7.
+**Removed:**
+- 14 columns that are 100% empty, including `host_response_rate`,
+  `host_response_time`, `host_acceptance_rate`, `neighbourhood`, `license` and
+  `instant_bookable`. A limitation of this version of the file.
+- `property_type` (55 categories), removed because of complete multicollinearity
+  with `room_type` — see section 5.7.
 
 ### 5.5 Outliers
 
-Dois critérios robustos aplicados sobre o log-preço:
-- **IQR de Tukey (1.5 × IQR):** 40 outliers (0,66%), limites [29, 6 823] HKD
-- **MAD (z robusto > 3):** 28 outliers (0,46%), limites [21, 8 485] HKD
+Two robust criteria applied to the log-price:
+- **Tukey's IQR (1.5 × IQR):** 40 outliers (0.66%), bounds [29, 6,823] HKD
+- **MAD (robust z > 3):** 28 outliers (0.46%), bounds [21, 8,485] HKD
 
-Três estratégias comparadas: sem tratamento, capping (winsorização nos limites
-do IQR) e filtragem robusta (remoção da união IQR ∪ MAD).
+Three strategies compared: no treatment, capping (winsorising at the IQR bounds)
+and robust filtering (removing the union IQR ∪ MAD).
 
-**`minimum_nights` e `accommodates`** foram analisadas com os mesmos critérios.
-No caso de `minimum_nights`, o MAD assinala 43% das observações por efeito da
-distribuição bimodal (a premissa de unimodalidade não se verifica); ambas as
-variáveis foram mantidas sem tratamento.
+**`minimum_nights` and `accommodates`** were analysed with the same criteria. For
+`minimum_nights`, MAD flags 43% of the observations because the distribution is
+bimodal (the unimodality assumption does not hold); both variables were kept
+untreated.
 
-**Nota metodológica:** o tratamento de outliers é aplicado **apenas ao conjunto
-de treino**. Winsorizar o alvo na validação e no teste produziria métricas
-otimistas e não comparáveis entre estratégias.
+**Methodological note:** outlier treatment is applied **only to the training
+set**. Winsorising the target on validation and test would produce optimistic
+metrics that are not comparable across strategies.
 
 ### 5.6 Amenities
 
-871 valores distintos, convertidos em:
-- `n_amenities`: contagem total por alojamento.
-- Uma **binária por cada uma das 15 amenities mais frequentes**.
+871 distinct values, turned into:
+- `n_amenities`: total count per listing.
+- One **binary feature for each of the 15 most frequent amenities**.
 
-A seleção das top 15 é feita sobre o dataset completo, antes do split. Como não
-usa o preço, o risco de leakage é desprezável.
+The top 15 are selected over the full dataset, before the split. Since it does
+not use the price, the leakage risk is negligible.
 
-### 5.7 Multicolinearidade
+### 5.7 Multicollinearity
 
-Uma versão inicial incluía `room_type` e `property_type` em simultâneo. Uma
-tabela de contingência mostrou redundância total (cada categoria de
-`property_type` corresponde exclusivamente a um `room_type`), e os coeficientes
-tinham sinais contraditórios com a análise exploratória. `property_type` foi
-removida, reduzindo a matriz de 109 para 51 features.
+An early version included `room_type` and `property_type` at the same time. A
+contingency table showed complete redundancy (each `property_type` category maps
+exclusively to one `room_type`), and the coefficients had signs that contradicted
+the exploratory analysis. `property_type` was removed, reducing the matrix from
+109 to 51 features.
 
-### 5.8 Split, validação e prevenção de leakage
+### 5.8 Split, validation and leakage prevention
 
-- Split **70% treino / 15% validação / 15% teste**, com `seed=42`.
-- **K-fold cross-validation com 5 folds** para comparar modelos e selecionar
-  hiperparâmetros.
-- Todo o pré-processamento que aprende parâmetros a partir dos dados (medianas
-  de imputação, limites de outliers, média e desvio para standardização,
-  limiares da classe positiva) é calculado **apenas no treino** e aplicado aos
-  restantes conjuntos. Nos k-folds, essa aprendizagem acontece dentro de cada
-  fold.
-- O conjunto de teste é usado **apenas para o reporte final**, nunca para tomar
-  decisões.
+- **70% train / 15% validation / 15% test** split, with `seed=42`.
+- **5-fold cross-validation** to compare models and select hyperparameters.
+- Every preprocessing step that learns parameters from the data (imputation
+  medians, outlier bounds, mean and standard deviation for standardisation,
+  positive-class thresholds) is computed **on the training set only** and applied
+  to the other sets. Inside the k-folds, that learning happens within each fold.
+- The test set is used **only for the final report**, never to make decisions.
 
-### 5.9 Features finais (51)
+### 5.9 Final features (51)
 
-- **Numéricas:** `accommodates`, `bedrooms`, `bathrooms`, `beds`,
+- **Numeric:** `accommodates`, `bedrooms`, `bathrooms`, `beds`,
   `minimum_nights`, `noites`, `n_amenities`, `long_stay`,
   `review_scores_rating`, `number_of_reviews`
-- **Polinomiais:** `accommodates²`, `n_amenities²` (construídos **antes** da
-  standardização)
-- **Binárias:** `tem_reviews` + 15 amenities
-- **Categóricas (one-hot):** `room_type`, `neighbourhood_cleansed`
-- **Interações:** `long_stay × room_type`
+- **Polynomial:** `accommodates²`, `n_amenities²` (built **before**
+  standardisation)
+- **Binary:** `tem_reviews` + 15 amenities
+- **Categorical (one-hot):** `room_type`, `neighbourhood_cleansed`
+- **Interactions:** `long_stay × room_type`
 
 ---
 
-## 6. Resultados
+## 6. Results
 
-### Regressão
+### Regression
 
-Configuração final: log-preço, polinomiais e interações, imputação simples, sem
-tratamento de outliers, L2 = 0.01.
+Final configuration: log-price, polynomial features and interactions, simple
+imputation, no outlier treatment, L2 = 0.01.
 
-| Conjunto | MAE | RMSE | R² |
+| Set | MAE | RMSE | R² |
 |---|---|---|---|
-| Treino | 0.3441 | 0.5014 | 0.6808 |
-| Validação | 0.3560 | 0.5107 | 0.6908 |
-| **Teste** | **0.3609** | **0.4989** | **0.6746** |
+| Train | 0.3441 | 0.5014 | 0.6808 |
+| Validation | 0.3560 | 0.5107 | 0.6908 |
+| **Test** | **0.3609** | **0.4989** | **0.6746** |
 
-Comparação de alvos e features (média de 5 folds):
+Comparison of targets and features (mean of 5 folds):
 
-| Modelo | R² |
+| Model | R² |
 |---|---|
-| Preço bruto (HKD) | 0.188 |
-| Log-preço | 0.660 |
-| Log + polinomiais | 0.667 |
-| Log + polinomiais + interações | 0.672 |
+| Raw price (HKD) | 0.188 |
+| Log-price | 0.660 |
+| Log + polynomial | 0.667 |
+| Log + polynomial + interactions | 0.672 |
 
-Regularização L2 (curva em U, ótimo em 0.01):
+L2 regularisation (U-shaped curve, optimum at 0.01):
 
 | λ | 0.000 | 0.001 | **0.010** | 0.100 | 1.000 |
 |---|---|---|---|---|---|
 | R² | 0.672 | 0.673 | **0.677** | 0.671 | 0.585 |
 
-### Classificação
+### Classification
 
-Classe positiva: top 20% de preço dentro de `room_type × bairro`, com limiares
-aprendidos no treino.
+Positive class: top 20% of price within `room_type × neighbourhood`, with
+thresholds learned on the training set.
 
-| Métrica | Threshold 0.5 | Threshold 0.273 |
+| Metric | Threshold 0.5 | Threshold 0.273 |
 |---|---|---|
 | Accuracy | 0.8282 | 0.7676 |
 | Precision | 0.7632 | 0.4262 |
@@ -279,39 +276,38 @@ aprendidos no treino.
 | F1 | 0.2710 | **0.4891** |
 | ROC-AUC | 0.8043 | 0.8043 |
 
-O threshold 0.273 foi selecionado por maximização do F1 na validação e aplicado
-ao teste sem novo ajuste.
+The 0.273 threshold was selected by maximising F1 on the validation set and
+applied to the test set with no further tuning.
 
 <p align="center">
-  <img src="figures/residuos.png" width="70%" alt="Análise de resíduos do modelo de regressão">
+  <img src="figures/residuos.png" width="70%" alt="Residual analysis of the regression model">
 </p>
 
-### Conclusões principais
+### Main conclusions
 
-**Decisões com maior impacto:**
-1. Log-preço (R² de 0.188 para 0.660, e treino muito mais estável).
-2. Remoção de `property_type` (multicolinearidade).
-3. Duração como feature em vez de filtragem do dataset.
-4. Ajuste do threshold de classificação (recall de 0.165 para 0.574).
+**Decisions with the most impact:**
+1. Log-price (R² from 0.188 to 0.660, and much more stable training).
+2. Removing `property_type` (multicollinearity).
+3. Using length of stay as a feature instead of filtering the dataset.
+4. Tuning the classification threshold (recall from 0.165 to 0.574).
 
-**Decisões com pouco impacto:**
-1. Tratamento de outliers — nenhuma das três estratégias produziu diferença
-   relevante, provavelmente porque o log-preço já comprime os extremos.
-2. Política de imputação — simples e agrupada são equivalentes, por as
-   variáveis imputadas serem redundantes face a `accommodates`.
+**Decisions with little impact:**
+1. Outlier treatment — none of the three strategies made a relevant difference,
+   probably because taking the log already compresses the extremes.
+2. Imputation policy — simple and grouped are equivalent, because the imputed
+   variables are redundant given `accommodates`.
 
 ---
 
-## 7. Limitações
+## 7. Limitations
 
-- Várias colunas previstas no enunciado estão 100% vazias nesta versão do
-  ficheiro (`host_response_rate`, `host_response_time`, `host_acceptance_rate`).
-- Categorias com poucas observações (Hotel room: 15, Shared room: 116)
-  apresentam erro elevado e viés sistemático; o modelo está calibrado para as
-  categorias dominantes.
-- As coordenadas geográficas não são usadas diretamente — o efeito espacial é
-  captado apenas ao nível do bairro.
-- Os coeficientes descrevem associações, não relações causais. O caso de
-  `number_of_reviews` (coeficiente negativo em ambos os modelos) ilustra-o:
-  a leitura plausível é que alojamentos mais baratos têm maior ocupação e
-  acumulam mais reviews.
+- Several columns required by the assignment are 100% empty in this version of
+  the file (`host_response_rate`, `host_response_time`, `host_acceptance_rate`).
+- Categories with few observations (Hotel room: 15, Shared room: 116) show high
+  error and systematic bias; the model is calibrated for the dominant categories.
+- The geographic coordinates are not used directly — the spatial effect is
+  captured only at neighbourhood level.
+- The coefficients describe associations, not causal relationships. The case of
+  `number_of_reviews` (negative coefficient in both models) illustrates this: the
+  plausible reading is that cheaper listings have higher occupancy and accumulate
+  more reviews.
